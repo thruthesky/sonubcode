@@ -46,7 +46,7 @@ const decodeVpPackages = Schema.decodeUnknownOption(
 )
 
 const installNames: Record<Method, string> = {
-  curl: "The OpenCode installer",
+  curl: "The Sonub Code installer",
   npm: "npm",
   pnpm: "pnpm",
   bun: "Bun",
@@ -57,6 +57,7 @@ const installNames: Record<Method, string> = {
 }
 
 const wingetPackage = "Anomaly.OpenCode"
+const SONUB_CODE_UPDATES_OFF = true
 const wingetArgs = [
   "--id",
   wingetPackage,
@@ -204,8 +205,8 @@ const make = Effect.gen(function* () {
     if (bash && (yield* fs.exists(bash).pipe(Effect.orElseSucceed(() => false)))) return bash
     return yield* Effect.fail(
       new UpgradeError({
-        title: "Git Bash is required to update OpenCode",
-        detail: "The OpenCode installer runs with Git Bash on Windows, and it was not found.",
+        title: "Git Bash is required to update Sonub Code",
+        detail: "The Sonub Code installer runs with Git Bash on Windows, and it was not found.",
         retry: "Install Git for Windows or set OPENCODE_GIT_BASH_PATH, then run opencode upgrade again.",
       }),
     )
@@ -289,7 +290,7 @@ const make = Effect.gen(function* () {
       catch: (cause) =>
         new UpgradeError(
           {
-            title: "Could not check for OpenCode updates",
+            title: "Could not check for Sonub Code updates",
             detail: errorDetail(cause),
             retry: "Check your network, then run opencode upgrade again.",
           },
@@ -299,7 +300,7 @@ const make = Effect.gen(function* () {
     if (!response.ok)
       return yield* Effect.fail(
         new UpgradeError({
-          title: "Could not check for OpenCode updates",
+          title: "Could not check for Sonub Code updates",
           detail: `The update service returned HTTP ${response.status}.`,
           retry: "Try again in a few minutes.",
         }),
@@ -310,7 +311,7 @@ const make = Effect.gen(function* () {
         catch: (cause) =>
           new UpgradeError(
             {
-              title: "Could not read the OpenCode update information",
+              title: "Could not read the Sonub Code update information",
               detail: errorDetail(cause),
               retry: "Try again in a few minutes.",
             },
@@ -322,7 +323,7 @@ const make = Effect.gen(function* () {
     if (!version || !packageName)
       return yield* Effect.fail(
         new UpgradeError({
-          title: "Could not read the OpenCode update information",
+          title: "Could not read the Sonub Code update information",
           detail: "The update service returned incomplete release information.",
           retry: "Try again in a few minutes.",
         }),
@@ -335,7 +336,7 @@ const make = Effect.gen(function* () {
     const failure = (detail: string, cause?: unknown) =>
       new UpgradeError(
         {
-          title: "Could not check for OpenCode updates",
+          title: "Could not check for Sonub Code updates",
           detail,
           command: ["winget", "search", ...wingetArgs].join(" "),
           retry: "Fix the issue above, then run opencode upgrade again.",
@@ -398,7 +399,7 @@ const make = Effect.gen(function* () {
     const failure = (detail: string, cause?: unknown) =>
       new UpgradeError(
         {
-          title: input.title ?? `${installNames[input.method]} could not install OpenCode`,
+          title: input.title ?? `${installNames[input.method]} could not install Sonub Code`,
           detail,
           command: (input.displayCommand ?? input.command).join(" "),
           retry: input.retry ?? "Fix the issue above, then run opencode upgrade again.",
@@ -481,7 +482,7 @@ const make = Effect.gen(function* () {
             method,
             command: ["curl", "-fsSL", "-o", installer, "https://opencode.ai/v2/install"],
             displayCommand: ["curl", "-fsSL", "https://opencode.ai/v2/install"],
-            title: "Could not download the OpenCode installer",
+            title: "Could not download the Sonub Code installer",
             retry: "Check your network, then run opencode upgrade again.",
           })
           return yield* retaining(
@@ -490,7 +491,7 @@ const make = Effect.gen(function* () {
               method,
               command: [bash, installer, "--version", version, "--no-modify-path"],
               displayCommand: ["opencode", "upgrade", version, "--method", "curl"],
-              title: "The OpenCode installer failed",
+              title: "The Sonub Code installer failed",
             }),
           )
         }
@@ -519,7 +520,7 @@ const make = Effect.gen(function* () {
           ? cause
           : new UpgradeError(
               {
-                title: "Could not prepare the OpenCode upgrade",
+                title: "Could not prepare the Sonub Code upgrade",
                 detail: errorDetail(cause),
                 retry: "Fix the issue above, then run opencode upgrade again.",
               },
@@ -531,7 +532,8 @@ const make = Effect.gen(function* () {
   })
 
   const inspect = Effect.fnUntraced(function* () {
-    if (OPENCODE_LOCAL || ["1", "true"].includes(process.env.OPENCODE_DISABLE_AUTOUPDATE?.toLowerCase() ?? "")) {
+    // Sonub Code: never asks opencode.ai for updates — the SONUB installer pins the version
+    if (SONUB_CODE_UPDATES_OFF || OPENCODE_LOCAL || ["1", "true"].includes(process.env.OPENCODE_DISABLE_AUTOUPDATE?.toLowerCase() ?? "")) {
       yield* Effect.logInfo("update check skipped", {
         reason: OPENCODE_LOCAL ? "local-install" : "disabled",
         version: OPENCODE_VERSION,
@@ -556,7 +558,7 @@ const make = Effect.gen(function* () {
       yield* Effect.logInfo("update check done", { action: "up-to-date" })
       return undefined
     }
-    yield* Effect.logInfo("OpenCode update available", { current, latest: version, action: next })
+    yield* Effect.logInfo("Sonub Code update available", { current, latest: version, action: next })
     return { policy, version }
   })
 
@@ -569,7 +571,7 @@ const make = Effect.gen(function* () {
     const current = yield* Ref.get(installedVersion)
     yield* upgrade(detected, version)
     yield* Ref.set(installedVersion, version)
-    yield* Effect.logInfo("updated OpenCode", { from: current, to: version, method: detected })
+    yield* Effect.logInfo("updated Sonub Code", { from: current, to: version, method: detected })
     return true
   })
 
@@ -586,7 +588,7 @@ const make = Effect.gen(function* () {
     if (OPENCODE_LOCAL)
       return {
         type: "unavailable" as const,
-        message: "This build runs from a source checkout. Use an installed OpenCode release to check for updates.",
+        message: "This build runs from a source checkout. Use an installed Sonub Code release to check for updates.",
       }
     const detected = yield* method()
     if (!detected)

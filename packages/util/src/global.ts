@@ -9,7 +9,8 @@ import { roots } from "#global-roots"
 import { Flock } from "./flock.js"
 import { makeGlobalNode } from "./effect/app-node.js"
 
-const app = "opencode"
+// Sonub Code: its own folders (~/.config/sonubcode, ~/.local/share/sonubcode) so it never mixes with an OpenCode install
+const app = "sonubcode"
 const { data, cache, config, state, tmp } = roots(app)
 
 const paths = {

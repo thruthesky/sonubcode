@@ -116,7 +116,8 @@ const processEffect = Effect.fnUntraced(function* (options: Options) {
           models: {
             url: process.env.OPENCODE_MODELS_URL,
             file: process.env.OPENCODE_MODELS_PATH,
-            fetch: !truthy(process.env.OPENCODE_DISABLE_MODELS_FETCH),
+            // Sonub Code: no model catalog from models.opencode.ai unless SONUBCODE_MODELS_FETCH=1
+            fetch: truthy(process.env.SONUBCODE_MODELS_FETCH) && !truthy(process.env.OPENCODE_DISABLE_MODELS_FETCH),
           },
           config: {
             directory: process.env.OPENCODE_CONFIG_DIR,
