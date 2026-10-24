@@ -98,7 +98,6 @@ import { McpCodeModeDefaultsPlugin } from "./mcp-codemode-defaults.js"
 import { ProviderPlugins } from "./provider.js"
 import { OpencodePlugin } from "./provider/opencode.js"
 import { WebSearchPlugins } from "./websearch/index.js"
-import { SkillPlugin } from "./skill.js"
 import { VcsHgPlugin } from "./vcs/hg.js"
 import { ToolInputRepairPlugin } from "./tool-input-repair.js"
 import { OptimizePlugin } from "./optimize.js"
@@ -227,7 +226,7 @@ const pre = [
   AgentPlugin.Plugin,
   PlanPlugin.Plugin,
   CommandPlugin.Plugin,
-  SkillPlugin.Plugin,
+  // Sonub Code: no built-in OpenCode skills ("opencode", "report") — they describe OpenCode, not Sonub Code
   VcsHgPlugin.Plugin,
   ModelsDevPlugin,
   ...ProviderPlugins,
