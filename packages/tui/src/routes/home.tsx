@@ -1,5 +1,5 @@
 import { Prompt, type PromptRef } from "../component/prompt"
-import { createEffect, createMemo, createSignal, onMount, Show, untrack } from "solid-js"
+import { createEffect, createMemo, createSignal, For, onMount, Show, untrack } from "solid-js"
 import { Logo } from "../component/logo"
 import { useArgs } from "../context/args"
 import { useRouteData } from "../context/route"
@@ -78,16 +78,16 @@ export function Home() {
     r.submit()
   })
 
+  // Sonub Code — logo at the top left, the model note under it, the prompt at the bottom
   return (
     <>
       <box
         flexGrow={1}
-        alignItems="center"
+        alignItems="flex-start"
+        paddingTop={1}
         paddingLeft={dimensions().width < 44 ? 1 : 2}
         paddingRight={dimensions().width < 44 ? 1 : 2}
       >
-        <box flexGrow={1} minHeight={0} />
-        <box height={3} minHeight={0} flexShrink={1} />
         <box
           flexShrink={0}
           onSizeChange={function () {
@@ -97,11 +97,12 @@ export function Home() {
           <Logo />
         </box>
         <box height={1} flexShrink={0} />
+        <HomeNote />
         <UpdateNotification width={logoWidth()} />
-        <box width="100%" maxWidth={75} zIndex={1000} paddingTop={1} flexShrink={0} position="relative">
+        <box flexGrow={1} minHeight={0} />
+        <box width="100%" zIndex={1000} flexShrink={0} position="relative">
           <Prompt ref={bind} placeholders={placeholder} disabled={forms().length > 0} />
         </box>
-        <box flexGrow={1} minHeight={0} />
       </box>
       <box width="100%" flexShrink={0}>
         <Slot path="home.footer" />
@@ -119,6 +120,37 @@ export function Home() {
         }}
       </Show>
     </>
+  )
+}
+
+// Under the logo: the default model and /models. The sandbox manager sets SONUBCODE_HOME_NOTE in the member's language
+// (lines split by \n); without it the note is built from the current model.
+function HomeNote() {
+  const local = useLocal()
+  const theme = useTheme()
+  const lines = createMemo(() => {
+    const note = process.env.SONUBCODE_HOME_NOTE?.trim()
+    if (note) return note.split("\n")
+    return [`Sonub Code uses ${local.model.parsed().model} by default.`, "Type /models to choose another model."]
+  })
+  return (
+    <box flexShrink={0} paddingBottom={1}>
+      <For each={lines()}>
+        {(line) => {
+          // "/models" stands out, like "/update" in the update notice
+          const at = line.indexOf("/models")
+          return (
+            <text fg={theme.text.muted} wrapMode="word">
+              {at < 0 ? line : line.slice(0, at)}
+              <Show when={at >= 0}>
+                <span style={{ fg: theme.text.action.primary.selected }}>/models</span>
+                {line.slice(at + "/models".length)}
+              </Show>
+            </text>
+          )
+        }}
+      </For>
+    </box>
   )
 }
 
