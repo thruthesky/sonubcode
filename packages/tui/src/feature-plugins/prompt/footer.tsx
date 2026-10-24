@@ -97,17 +97,22 @@ export function PromptFooter(props: {
             </box>
           </Match>
           <Match when={props.showDetails && layout().shortcuts}>
+            {/* Sonub Code: one line like Claude Code — ▸▸ shift+tab to cycle agents · ctrl+p commands */}
             <text
               fg={interactive() ? props.context.theme.text.base : props.context.theme.text.action.primary.disabled}
               attributes={interactive() ? 0 : TextAttributes.DIM}
+              wrapMode="none"
               flexShrink={0}
             >
-              {shortcut("agent.cycle")}{" "}
-              <span style={interactive() ? { fg: props.context.theme.text.muted } : {}}>agents</span>
+              <span style={interactive() ? { fg: props.context.theme.text.action.primary.selected } : {}}>▸▸ </span>
+              {shortcut("agent.cycle")}
+              <span style={interactive() ? { fg: props.context.theme.text.muted } : {}}> to cycle agents · </span>
+              {shortcut("command.palette.show")}
+              <span style={interactive() ? { fg: props.context.theme.text.muted } : {}}> commands</span>
             </text>
           </Match>
         </Switch>
-        <Show when={props.showDetails && layout().shortcuts}>
+        <Show when={props.showDetails && layout().shortcuts && (live() || status().length > 0)}>
           <text
             fg={interactive() ? props.context.theme.text.base : props.context.theme.text.action.primary.disabled}
             attributes={interactive() ? 0 : TextAttributes.DIM}

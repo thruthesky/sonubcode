@@ -8,3 +8,6 @@ export const go = {
   left: ["    ", "█▀▀▀", "█_^█", "▀▀▀▀"],
   right: ["    ", "█▀▀█", "█__█", "▀▀▀▀"],
 }
+
+// Sonub Code mark — a bold pixel "S" (half blocks, 10×4), drawn in the SONUB brand purple on the home header
+export const mark = ["▄████████▄", "▀██▄▄▄▄▄▄ ", " ▀▀▀▀▀▀██▄", "▀████████▀"]

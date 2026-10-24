@@ -15,7 +15,7 @@ import { useLocal } from "../../context/local"
 import { useTheme, useThemes } from "../../context/theme"
 import { tint } from "../../theme/color"
 import { createAnimatable, tween } from "../../ui/animation"
-import { EmptyBorder, SplitBorder } from "../../ui/border"
+import { EmptyBorder } from "../../ui/border"
 import { useTuiPaths, useTuiTerminalEnvironment } from "../../context/runtime"
 import { useClipboard } from "../../context/clipboard"
 import { Spinner } from "../spinner"
@@ -1604,7 +1604,7 @@ export function Prompt(props: PromptProps) {
         return `Run a command… "${shell()[store.placeholder % shell().length]}"`
       }
       if (!list().length) return undefined
-      return `Ask anything… "${list()[store.placeholder % list().length]}"`
+      return `Try "${list()[store.placeholder % list().length]}"`
     })()
     if (!value) return undefined
     const width = dimensions().width < 44 ? dimensions().width - 5 : Math.min(75, dimensions().width - 4) - 5
@@ -1658,99 +1658,109 @@ export function Prompt(props: PromptProps) {
   })
   const maxHeight = createMemo(() => Math.max(6, Math.floor(dimensions().height / 3)))
 
-  const promptBg = createMemo(() => theme.decrease(theme.background.raised.base))
-
   return (
     <>
       <box ref={(r: BoxRenderable) => (anchor = r)} visible={props.visible !== false} width="100%">
-        <box
-          width="100%"
-          border={["left"]}
-          borderColor={borderHighlight()}
-          customBorderChars={{
-            ...SplitBorder.customBorderChars,
-            bottomLeft: "╹",
-          }}
-        >
+        <Show when={config.prompt?.image_preview && visibleImageAttachments().length > 0}>
           <box
-            paddingLeft={dimensions().width < 44 ? 1 : 2}
-            paddingRight={dimensions().width < 44 ? 1 : 2}
-            paddingTop={1}
-            flexShrink={0}
-            backgroundColor={promptBg()}
-            flexGrow={1}
             width="100%"
+            height={imagePreviewHeight() + 1}
+            flexDirection="row"
+            flexShrink={0}
+            justifyContent="flex-start"
+            gap={1}
+            paddingBottom={1}
           >
-            <Show when={config.prompt?.image_preview && visibleImageAttachments().length > 0}>
-              <box
-                width="100%"
-                height={imagePreviewHeight() + 1}
-                flexDirection="row"
-                flexShrink={0}
-                justifyContent="flex-start"
-                gap={1}
-                paddingBottom={1}
-              >
-                <For each={visibleImageAttachments()}>
-                  {(file, index) => {
-                    const [failed, setFailed] = createSignal(false)
-                    return (
-                      <box
-                        width={imagePreviewWidth()}
-                        height={imagePreviewHeight()}
-                        flexBasis={imagePreviewWidth()}
-                        flexShrink={1}
-                        onMouseUp={(event: MouseEvent) => {
-                          if (event.button !== 0) return
-                          event.stopPropagation()
-                          openImagePreview(index())
-                        }}
-                      >
-                        <Show
-                          when={!failed()}
-                          fallback={
-                            <box width="100%" height="100%" alignItems="center" justifyContent="center">
-                              <text fg={theme.text.muted}>No preview</text>
-                            </box>
-                          }
-                        >
-                          <image
-                            id={`prompt-image-preview-${index()}`}
-                            source={file.uri}
-                            fit="cover"
-                            protocol="auto"
-                            width="100%"
-                            height="100%"
-                            onError={() => setFailed(true)}
-                          />
-                        </Show>
-                      </box>
-                    )
-                  }}
-                </For>
-                <Show when={imageAttachments().length > visibleImageAttachments().length}>
+            <For each={visibleImageAttachments()}>
+              {(file, index) => {
+                const [failed, setFailed] = createSignal(false)
+                return (
                   <box
-                    width={8}
+                    width={imagePreviewWidth()}
                     height={imagePreviewHeight()}
-                    flexBasis={8}
+                    flexBasis={imagePreviewWidth()}
                     flexShrink={1}
-                    alignItems="center"
-                    justifyContent="center"
                     onMouseUp={(event: MouseEvent) => {
                       if (event.button !== 0) return
                       event.stopPropagation()
-                      openImagePreview(visibleImageAttachments().length)
+                      openImagePreview(index())
                     }}
                   >
-                    <text fg={theme.text.muted} wrapMode="none" truncate>
-                      +{imageAttachments().length - visibleImageAttachments().length} more
-                    </text>
+                    <Show
+                      when={!failed()}
+                      fallback={
+                        <box width="100%" height="100%" alignItems="center" justifyContent="center">
+                          <text fg={theme.text.muted}>No preview</text>
+                        </box>
+                      }
+                    >
+                      <image
+                        id={`prompt-image-preview-${index()}`}
+                        source={file.uri}
+                        fit="cover"
+                        protocol="auto"
+                        width="100%"
+                        height="100%"
+                        onError={() => setFailed(true)}
+                      />
+                    </Show>
                   </box>
-                </Show>
+                )
+              }}
+            </For>
+            <Show when={imageAttachments().length > visibleImageAttachments().length}>
+              <box
+                width={8}
+                height={imagePreviewHeight()}
+                flexBasis={8}
+                flexShrink={1}
+                alignItems="center"
+                justifyContent="center"
+                onMouseUp={(event: MouseEvent) => {
+                  if (event.button !== 0) return
+                  event.stopPropagation()
+                  openImagePreview(visibleImageAttachments().length)
+                }}
+              >
+                <text fg={theme.text.muted} wrapMode="none" truncate>
+                  +{imageAttachments().length - visibleImageAttachments().length} more
+                </text>
               </box>
             </Show>
+          </box>
+        </Show>
+        {/* Sonub Code: like Claude Code — the agent · model on the right above a rule, "❯" and the input between two rules, hints under them */}
+        <box flexDirection="row" flexShrink={0} gap={1} justifyContent="flex-end" paddingRight={1}>
+          <PromptMetadataRow
+            mode={store.mode}
+            agent={agentLabel()}
+            auto={local.permission.mode === "autoaccept"}
+            model={promptDisplay().modelLabel}
+            provider={promptDisplay().providerLabel}
+            variant={promptDisplay().variant}
+            muted={!!muted()}
+            highlight={highlight()}
+            agentAlpha={agentMetaAlpha()}
+            modelAlpha={modelMetaAlpha()}
+            variantAlpha={variantMetaAlpha()}
+            end
+          />
+        </box>
+        <box
+          width="100%"
+          flexShrink={0}
+          border={["top", "bottom"]}
+          // gray rules like Claude Code; the shell mode colors them
+          borderColor={store.mode === "shell" ? borderHighlight() : theme.border.base}
+          customBorderChars={{ ...EmptyBorder, horizontal: "─" }}
+        >
+          <box flexDirection="row" width="100%">
+            <text fg={muted() ? theme.text.muted : theme.text.base} flexShrink={0} selectable={false}>
+              {store.mode === "shell" ? "! " : "❯ "}
+            </text>
             <textarea
-              width="100%"
+              flexGrow={1}
+              minWidth={0}
               placeholder={placeholderText()}
               placeholderColor={theme.text.muted}
               textColor={muted() ? theme.text.muted : theme.text.base}
@@ -1837,54 +1847,21 @@ export function Prompt(props: PromptProps) {
               cursorColor={disabled() ? theme.background.raised.base : theme.text.base}
               syntaxStyle={syntax()}
             />
-            <box flexDirection="row" flexShrink={0} paddingTop={1} gap={1} justifyContent="space-between">
-              <PromptMetadataRow
-                mode={store.mode}
-                agent={agentLabel()}
-                auto={local.permission.mode === "autoaccept"}
-                model={promptDisplay().modelLabel}
-                provider={promptDisplay().providerLabel}
-                variant={promptDisplay().variant}
-                muted={!!muted()}
-                highlight={highlight()}
-                agentAlpha={agentMetaAlpha()}
-                modelAlpha={modelMetaAlpha()}
-                variantAlpha={variantMetaAlpha()}
-              />
-            </box>
           </box>
         </box>
         <box
-          height={1}
-          border={["left"]}
-          borderColor={borderHighlight()}
-          customBorderChars={{
-            ...EmptyBorder,
-            vertical: promptBg().a !== 0 ? "╹" : " ",
-          }}
+          width="100%"
+          flexDirection="row"
+          justifyContent={props.sessionID ? "space-between" : "flex-start"}
+          gap={props.sessionID ? 2 : 0}
+          paddingLeft={2}
+          paddingRight={1}
         >
-          <box
-            height={1}
-            border={["bottom"]}
-            borderColor={promptBg()}
-            customBorderChars={
-              promptBg().a !== 0
-                ? {
-                    ...EmptyBorder,
-                    horizontal: "▀",
-                  }
-                : {
-                    ...EmptyBorder,
-                    horizontal: " ",
-                  }
-            }
-          />
-        </box>
-        <box width="100%" flexDirection="row" justifyContent="space-between" gap={2}>
           <Slot path="prompt.footer" input={footerInput()}>
             <Slot path="prompt.footer.status" input={footerInput()}>
+              {/* Sonub Code: on home the folder is in the header, so the hints start at the left */}
               <box
-                flexGrow={1}
+                flexGrow={props.sessionID ? 1 : 0}
                 flexShrink={1}
                 minWidth={0}
                 onSizeChange={function (this: BoxRenderable) {
@@ -1928,7 +1905,7 @@ export function Prompt(props: PromptProps) {
                     </box>
                   </Match>
                   <Match when={true}>
-                    <Show when={locationLabelDisplay()} fallback={<text />}>
+                    <Show when={props.sessionID ? locationLabelDisplay() : undefined} fallback={<text />}>
                       {(location) => (
                         <text
                           id="prompt.footer.location"

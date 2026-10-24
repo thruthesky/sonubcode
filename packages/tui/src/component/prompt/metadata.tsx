@@ -17,6 +17,8 @@ export function PromptMetadataRow(props: {
   agentAlpha: number
   modelAlpha: number
   variantAlpha: number
+  /** Sonub Code: right-aligned above the input with a leading dot, like Claude Code's "● high · /effort" */
+  end?: boolean
 }) {
   const theme = useTheme()
   const dimensions = useTerminalDimensions()
@@ -34,11 +36,21 @@ export function PromptMetadataRow(props: {
   })
 
   return (
-    <box flexDirection="row" gap={1} flexGrow={1} flexShrink={1} minWidth={0}>
+    <box
+      flexDirection="row"
+      gap={1}
+      flexGrow={1}
+      flexShrink={1}
+      minWidth={0}
+      justifyContent={props.end ? "flex-end" : "flex-start"}
+    >
       <Show
         when={(props.mode === "shell" || props.agent) && (layout().agent || layout().model)}
         fallback={<box height={1} />}
       >
+        <Show when={props.end}>
+          <text fg={fade(props.highlight, props.agentAlpha)}>●</text>
+        </Show>
         <Show when={layout().agent}>
           {(agent) => <text fg={fade(props.highlight, props.agentAlpha)}>{agent()}</text>}
         </Show>
@@ -46,7 +58,7 @@ export function PromptMetadataRow(props: {
           <text fg={fade(theme.text.muted, props.agentAlpha)}>auto</text>
         </Show>
         <Show when={props.mode === "normal" && layout().model}>
-          <box flexDirection="row" gap={1} flexGrow={1} flexShrink={1} minWidth={0}>
+          <box flexDirection="row" gap={1} flexGrow={props.end ? 0 : 1} flexShrink={1} minWidth={0}>
             <Show when={layout().agent}>
               <text fg={fade(theme.text.muted, props.modelAlpha)}>·</text>
             </Show>
@@ -59,7 +71,7 @@ export function PromptMetadataRow(props: {
             >
               {layout().model}
             </text>
-            <Show when={layout().provider}>
+            <Show when={!props.end && layout().provider}>
               {(provider) => (
                 <text flexShrink={0} fg={fade(theme.text.muted, props.modelAlpha)}>
                   {provider()}

@@ -1,6 +1,9 @@
 import { Prompt, type PromptRef } from "../component/prompt"
 import { createEffect, createMemo, createSignal, For, onMount, Show, untrack } from "solid-js"
-import { Logo } from "../component/logo"
+import { mark } from "../logo"
+import { useTuiApp, useTuiPaths } from "../context/runtime"
+import { abbreviateHome } from "../runtime"
+import { RGBA, TextAttributes } from "@opentui/core"
 import { useArgs } from "../context/args"
 import { useRouteData } from "../context/route"
 import { usePromptRef } from "../context/prompt"
@@ -32,7 +35,6 @@ export function Home() {
   const data = useData()
   const location = useLocation()
   const dimensions = useTerminalDimensions()
-  const [logoWidth, setLogoWidth] = createSignal(0)
   // Global MCP elicitations can arrive without a session route, so keep them reachable from Home.
   const currentLocation = () => route.location ?? data.location.default()
   const forms = createMemo(() => data.session.form.list("global", currentLocation()) ?? [])
@@ -78,7 +80,8 @@ export function Home() {
     r.submit()
   })
 
-  // Sonub Code — logo at the top left, the model note under it, the prompt at the bottom
+  // Sonub Code — a header like Claude Code's at the top left (mark · name and version · model · folder), the model note under it,
+  // the prompt at the bottom
   return (
     <>
       <box
@@ -88,17 +91,10 @@ export function Home() {
         paddingLeft={dimensions().width < 44 ? 1 : 2}
         paddingRight={dimensions().width < 44 ? 1 : 2}
       >
-        <box
-          flexShrink={0}
-          onSizeChange={function () {
-            setLogoWidth(this.width)
-          }}
-        >
-          <Logo />
-        </box>
+        <HomeHeader />
         <box height={1} flexShrink={0} />
         <HomeNote />
-        <UpdateNotification width={logoWidth()} />
+        <UpdateNotification width={dimensions().width} />
         <box flexGrow={1} minHeight={0} />
         <box width="100%" zIndex={1000} flexShrink={0} position="relative">
           <Prompt ref={bind} placeholders={placeholder} disabled={forms().length > 0} />
@@ -123,7 +119,56 @@ export function Home() {
   )
 }
 
-// Under the logo: the default model and /models. The sandbox manager sets SONUBCODE_HOME_NOTE in the member's language
+// SONUB brand purple (sonub-design: default theme)
+const BRAND = RGBA.fromHex("#6551a8")
+
+// Claude Code style header: the mark on the left, three lines on the right — name and version, model · provider, working folder
+function HomeHeader() {
+  const app = useTuiApp()
+  const paths = useTuiPaths()
+  const local = useLocal()
+  const theme = useTheme()
+  const location = useLocation()
+  const data = useData()
+  const dimensions = useTerminalDimensions()
+  const folder = createMemo(() => {
+    const directory = location.ref?.directory ?? data.location.default()?.directory
+    return directory ? abbreviateHome(directory, paths.home) : ""
+  })
+  const model = createMemo(() => {
+    const parsed = local.model.parsed()
+    return parsed.provider ? `${parsed.model} · ${parsed.provider}` : parsed.model
+  })
+  return (
+    <box flexDirection="row" gap={2} flexShrink={0}>
+      <Show when={dimensions().width >= 44}>
+        <box flexShrink={0}>
+          <For each={mark}>
+            {(line) => (
+              <text fg={BRAND} selectable={false}>
+                {line}
+              </text>
+            )}
+          </For>
+        </box>
+      </Show>
+      <box flexShrink={1} minWidth={0}>
+        <text fg={theme.text.base} wrapMode="none" truncate>
+          <span style={{ attributes: TextAttributes.BOLD }}>Sonub Code</span>
+          <span style={{ fg: theme.text.muted }}> v{app.version}</span>
+        </text>
+        <text fg={theme.text.muted} wrapMode="none" truncate>
+          {model()}
+        </text>
+        <text fg={theme.text.muted} wrapMode="none" truncate>
+          {folder()}
+        </text>
+      </box>
+    </box>
+  )
+}
+
+// Under the header: the default model and /models. The sandbox manager sets SONUBCODE_HOME_NOTE in the member's language
 // (lines split by \n); without it the note is built from the current model.
 function HomeNote() {
   const local = useLocal()
@@ -133,8 +178,10 @@ function HomeNote() {
     if (note) return note.split("\n")
     return [`Sonub Code uses ${local.model.parsed().model} by default.`, "Type /models to choose another model."]
   })
+  const dimensions = useTerminalDimensions()
+  // lines up with the header text, right of the mark (10 wide + gap 2)
   return (
-    <box flexShrink={0} paddingBottom={1}>
+    <box flexShrink={0} paddingBottom={1} paddingLeft={dimensions().width >= 44 ? 12 : 0}>
       <For each={lines()}>
         {(line) => {
           // "/models" stands out, like "/update" in the update notice

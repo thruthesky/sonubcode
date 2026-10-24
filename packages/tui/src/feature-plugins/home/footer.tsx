@@ -76,7 +76,6 @@ function Plugins(props: { context: Plugin.Context }) {
 
 function View(props: { context: Plugin.Context }) {
   const dimensions = useTerminalDimensions()
-  const visibility = createMemo(() => homeFooterVisibility(dimensions().width))
 
   return (
     <Show when={dimensions().height >= 14 && dimensions().width >= 44}>
@@ -93,12 +92,7 @@ function View(props: { context: Plugin.Context }) {
         <Mcp context={props.context} />
         <Plugins context={props.context} />
         <Slot path="home.footer.status" />
-        <box flexGrow={1} />
-        <Show when={visibility().version}>
-          <box flexShrink={0}>
-            <text fg={props.context.theme.text.muted}>{props.context.app.version}</text>
-          </box>
-        </Show>
+        {/* Sonub Code: the version is in the home header (like Claude Code), not here */}
       </box>
     </Show>
   )
