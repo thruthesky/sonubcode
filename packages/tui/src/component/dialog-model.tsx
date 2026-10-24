@@ -82,11 +82,11 @@ function DialogConnectedModels(props: {
   )
   const models = createMemo(() => data.location.model.list(location.ref) ?? [])
 
-  const showExtra = createMemo(() => connected() && !props.providerID)
 
   const options = createMemo(() => {
     const needle = query().trim()
-    const showSections = showExtra() && needle.length === 0
+    // Sonub Code: the few Sonub models keep their configured order (default first) — no Favorites/Recent sections on top
+    const showSections = false
     const favorites = connected() ? (newDesigns() ? favoritesAtOpen : local.model.favorite()) : []
     const recents = local.model.recent()
 
@@ -199,19 +199,8 @@ function DialogConnectedModels(props: {
       searchInTitle
       titlePlaceholder="Search models"
       options={options()}
+      // Sonub Code: only the Sonub models — no "View all integrations" (ctrl+a) to connect other providers
       actions={[
-        {
-          command: "model.dialog.provider",
-          title: newDesigns()
-            ? connected()
-              ? "connect integration"
-              : "view all integrations"
-            : connected()
-              ? "Connect an integration"
-              : "View all integrations",
-          selection: "none",
-          onTrigger: props.onConnect,
-        },
         {
           command: "model.dialog.favorite",
           title: newDesigns() ? (option) => (isFavorite(option?.value) ? "unfavorite" : "favorite") : "Favorite",
